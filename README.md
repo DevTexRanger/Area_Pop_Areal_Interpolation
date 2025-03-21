@@ -3,7 +3,7 @@
 ## **Overview**
 This guide provides a step-by-step breakdown of an R script that analyzes Hispanic population changes in **Shelby County, Alabama**, between **2015 and 2020** using **ACS (American Community Survey) data**. The script applies **area-weighted** and **population-weighted areal interpolation** techniques to estimate population changes and visualizes the results using a **Mapbox-based choropleth map**.
 
-## **1. Load Required Libraries**
+## Load Required Libraries
 The script uses `pacman` to install and load necessary packages.
 
 ```r
@@ -25,7 +25,7 @@ p_load(
   - `mapboxapi`: Creates base maps.
   - `tidyverse`: Data manipulation.
 
-## **2. Load ACS Variables for 2015 and 2020**
+## Load ACS Variables for 2015 and 2020
 ```r
 v15 <- load_variables(2015, "acs5", cache = TRUE) # B03001_003
 v20 <- load_variables(2020, "acs5", cache = TRUE) # B03001_003
@@ -33,8 +33,8 @@ v20 <- load_variables(2020, "acs5", cache = TRUE) # B03001_003
 - Loads metadata for **ACS 5-year estimates**.
 - `B03001_003` represents the **Hispanic or Latino population**.
 
-## **3. Retrieve Hispanic Population Data**
-### **2015 ACS Data**
+## Retrieve Hispanic Population Data
+### 2015 ACS Data
 ```r
 hisp_15 <- get_acs(
   geography = "tract",
@@ -47,7 +47,7 @@ hisp_15 <- get_acs(
   select(estimate) %>%
   st_transform(26949)
 ```
-### **2020 ACS Data**
+### 2020 ACS Data
 ```r
 hisp_20 <- get_acs(
   geography = "tract",
@@ -62,7 +62,7 @@ hisp_20 <- get_acs(
 - `get_acs()` fetches **tract-level ACS data**.
 - `st_transform(26949)` reprojects to **NAD83 / Alabama Central (EPSG: 26949)**.
 
-## **4. Area-Weighted Areal Interpolation**
+## Area-Weighted Areal Interpolation
 ```r
 hisp_interpolate_aw <- st_interpolate_aw(
   hisp_15,
@@ -74,8 +74,8 @@ hisp_interpolate_aw <- st_interpolate_aw(
 - Uses `st_interpolate_aw()` to estimate the **Hispanic population in 2020 census tracts based on 2015 data**.
 - **Extensive interpolation** assumes **total population is preserved across spatial units**.
 
-## **5. Population-Weighted Areal Interpolation**
-### **Retrieve 2020 Census Blocks**
+## Population-Weighted Areal Interpolation
+### Retrieve 2020 Census Blocks
 ```r
 shelby_blocks <- blocks(
   state = "AL",
@@ -83,7 +83,7 @@ shelby_blocks <- blocks(
   year = 2020
 )
 ```
-### **Interpolate Using Population Weights**
+### Interpolate Using Population Weights
 ```r
 hisp_interpolate_pw <- interpolate_pw(
   hisp_15,
@@ -98,7 +98,7 @@ hisp_interpolate_pw <- interpolate_pw(
 - Uses **population-weighted interpolation**, where **census blocks** act as weighting factors.
 - `weight_column = "POP20"` ensures weights are based on **2020 population data**.
 
-## **6. Calculate Population Shift**
+## Calculate Population Shift
 ```r
 hisp_shift <- hisp_20 %>%
   left_join(st_drop_geometry(hisp_interpolate_pw),
@@ -110,7 +110,7 @@ hisp_shift <- hisp_20 %>%
 - Computes **population shift**:
   \[\text{Hispanic Population in 2020} - \text{Estimated Hispanic Population in 2015}\]
 
-## **7. Map Hispanic Population Shift**
+## Map Hispanic Population Shift
 ### **Generate a Mapbox Basemap**
 ```r
 shelby_basemap <- layer_static_mapbox(
@@ -121,7 +121,7 @@ shelby_basemap <- layer_static_mapbox(
 ```
 - Uses **Mapbox API** to generate a **dark-themed basemap**.
 
-### **Create the Final Map Using ggplot**
+### Create the Final Map Using ggplot
 ```r
 ggplot() +
   shelby_basemap +
@@ -139,11 +139,4 @@ ggplot() +
   - `theme_void()`: Removes background elements for clarity.
 
  ![image](https://github.com/user-attachments/assets/cf4f9aff-b3d1-45f7-b752-1f6e766e7216)
-
-
-## **Summary**
-1. **Retrieve ACS Hispanic population data for 2015 and 2020.**
-2. **Use area-weighted and population-weighted interpolation** to estimate Hispanic population in 2020 tracts.
-3. **Calculate the shift in Hispanic population between 2015 and 2020.**
-4. **Visualize the change using a Mapbox-based choropleth map.**
 
